@@ -27,11 +27,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.room.Room
 import androidx.webkit.WebViewAssetLoader
@@ -41,6 +44,7 @@ import java.net.URLEncoder
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContent { WebShelfTheme { WebShelfRoot() } }
     }
@@ -70,6 +74,8 @@ private fun WebShelfRoot() {
     var showAdd by remember { mutableStateOf(false) }
     var showOnline by remember { mutableStateOf(false) }
     var showRename by remember { mutableStateOf<WebApp?>(null) }
+    var showSettings by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
 
     val filePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -97,8 +103,15 @@ private fun WebShelfRoot() {
     }
 
     BackHandler(enabled = selected != null) { selected = null }
+    BackHandler(enabled = showAbout) { showAbout = false }
+    BackHandler(enabled = showSettings && !showAbout) { showSettings = false }
 
-    if (selected != null) {
+    if (showAbout) {
+        AboutScreen(onBack = { showAbout = false })
+    } else if (showSettings) {
+        SettingsScreen(appCount = apps.size, onBack = { showSettings = false },
+            onAbout = { showAbout = true })
+    } else if (selected != null) {
         AppRunnerScreen(app = selected!!, importer = importer, onBack = { selected = null })
     } else {
         Scaffold(
@@ -112,6 +125,9 @@ private fun WebShelfRoot() {
                         }
                     },
                     actions = {
+                        IconButton(onClick = { showSettings = true }) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
                         IconButton(onClick = { showAdd = true }) {
                             Icon(Icons.Default.Add, contentDescription = "Add app")
                         }
@@ -313,6 +329,133 @@ private fun EditAppDialog(
             }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsScreen(appCount: Int, onBack: () -> Unit, onAbout: () -> Unit) {
+    val context = LocalContext.current
+    var storageText by remember { mutableStateOf("Calculating…") }
+    LaunchedEffect(Unit) {
+        storageText = formatStorageUsed(File(context.filesDir, "webapps"))
+    }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Settings") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text("Library", style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary)
+            ListItem(
+                headlineContent = { Text("$appCount apps in your library") },
+                supportingContent = { Text(storageText) },
+                leadingContent = { Icon(Icons.Default.Widgets, null) }
+            )
+            Spacer(Modifier.height(12.dp))
+            Text("Appearance", style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary)
+            ListItem(
+                headlineContent = { Text("Theme") },
+                supportingContent = { Text("Follows your system setting") },
+                leadingContent = { Icon(Icons.Default.DarkMode, null) }
+            )
+            Spacer(Modifier.height(12.dp))
+            Text("About", style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary)
+            ListItem(
+                headlineContent = { Text("About WebShelf") },
+                supportingContent = { Text("Version ${BuildConfig.VERSION_NAME}") },
+                leadingContent = { Icon(Icons.Default.Info, null) },
+                modifier = Modifier.clickable { onAbout() }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AboutScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("About WebShelf") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Back") }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            Modifier.fillMaxSize().padding(padding).padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(Modifier.height(24.dp))
+            Surface(
+                shape = RoundedCornerShape(28.dp),
+                color = Color(0xFF0F766E),
+                modifier = Modifier.size(96.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = "WebShelf logo",
+                        modifier = Modifier.size(72.dp),
+                        tint = Color.Unspecified
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Text("WebShelf", style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold)
+            Text("Version ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "A local-first library for your web apps and offline HTML projects. " +
+                    "Import a website by URL, or a standalone HTML file, a ZIP archive, " +
+                    "or a whole project folder, and launch everything from one shelf.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(24.dp))
+            OutlinedButton(
+                onClick = {
+                    context.startActivity(Intent(Intent.ACTION_VIEW,
+                        Uri.parse("https://github.com/SkyeSlav/WebShelf")))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Code, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Source code on GitHub")
+            }
+            Spacer(Modifier.height(16.dp))
+            Text("MIT License", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("WebShelf is open source. The logo is an original design.",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private fun formatStorageUsed(root: File): String {
+    val bytes = root.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+    return when {
+        bytes < 1024 -> "$bytes B stored"
+        bytes < 1024 * 1024 -> "%.1f KB stored".format(bytes / 1024.0)
+        else -> "%.1f MB stored".format(bytes / 1024.0 / 1024.0)
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

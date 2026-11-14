@@ -25,17 +25,21 @@ WebShelf is an open-source, local-first Android library for online web apps and 
 - Categorize, search, rename and remove library entries.
 - Run local projects through AndroidX WebKit's `WebViewAssetLoader`, using a unique HTTPS origin per local app.
 - Adaptive light/dark Material 3 appearance based on the Android system theme.
+- Splash screen with the WebShelf logo.
+- Settings menu with an About page (version, source code, license).
 - Room database for library metadata; imported files stay in app-private storage.
 
 ## Get the app
 
-There is no release on Google Play yet. Grab the latest debug APK from GitHub Actions:
+The latest stable release is on the [Releases page](https://github.com/SkyeSlav/WebShelf/releases): download `app-release.apk` and install it. Every release is signed with the same WebShelf release key, so future releases update over it directly.
+
+There is no Google Play listing yet. If you want the freshest build instead of the latest release, grab the debug APK from GitHub Actions:
 
 1. Open the [Actions tab](https://github.com/SkyeSlav/WebShelf/actions).
 2. Pick the latest successful **Build WebShelf APK** run.
 3. Download the `webshelf-debug-apk` artifact and install `app-debug.apk` on your device.
 
-The APK is a debug build, signed with the debug key. It is free to use and share under the MIT license.
+The debug APK is signed with a throwaway debug key, so it cannot update over the release build (or the other way around). Uninstall one before installing the other.
 
 ## Build it yourself
 
@@ -76,7 +80,7 @@ The project uses Android Gradle Plugin 8.7.3, Kotlin 2.0.21, Jetpack Compose, Ro
 - Export/import a complete WebShelf backup.
 - Better handling of nested project roots and multiple HTML entry points.
 - Import progress, storage usage and duplicate detection.
-- Signed release builds and a Google Play listing.
+- A Google Play listing.
 - Automated tests.
 
 ## License

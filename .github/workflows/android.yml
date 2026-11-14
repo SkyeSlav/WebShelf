@@ -1,4 +1,4 @@
-# Build the WebShelf debug APK on GitHub Actions.
+# Build WebShelf APKs on GitHub Actions.
 # Versions must match the project: AGP 8.7.3, Kotlin 2.0.21, Gradle 8.9,
 # compileSdk/targetSdk 35, JDK 17 (see build.gradle.kts / app/build.gradle.kts).
 # Note: this repo ships no gradlew script or gradle-wrapper.jar (the original
@@ -11,16 +11,22 @@
 # already ships an Android SDK, so install the two needed packages with
 # sdkmanager directly.
 # How to use: push to main (or run manually from the Actions tab) and
-# download the "webshelf-debug-apk" artifact (app-debug.apk) when it goes green.
+# download the "webshelf-debug-apk" artifact (app-debug.apk) when it goes
+# green. Push a tag like v1.0.0 to build the signed release APK and publish
+# it as a GitHub Release. Release signing uses the repo secrets
+# ANDROID_KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS and KEY_PASSWORD;
+# the same key signs every release, so releases update over each other.
 name: Build WebShelf APK
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   workflow_dispatch:
 
 jobs:
   build:
+    if: startsWith(github.ref, 'refs/heads/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -49,3 +55,51 @@ jobs:
         with:
           name: webshelf-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Install Android 35 platform and build-tools
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: "8.9"
+
+      - name: Decode release keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > release.keystore
+
+      - name: Build signed release APK
+        run: gradle assembleRelease --stacktrace
+        env:
+          KEYSTORE_FILE: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            app/build/outputs/apk/release/app-release.apk \
+            --title "WebShelf ${{ github.ref_name }}" \
+            --notes "WebShelf 1.0.0, the first release.
+
+            A local-first library for web apps and offline HTML projects. Includes the WebShelf logo, a splash screen, and a Settings menu with an About page.
+
+            Install: download app-release.apk and install it on your device. This release is signed with the WebShelf release key, so future releases will update over it directly."
+        env:
+          GH_TOKEN: ${{ github.token }}
