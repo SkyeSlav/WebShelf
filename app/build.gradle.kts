@@ -40,7 +40,10 @@ android {
     buildTypes {
         release {
             val ksFile = System.getenv("KEYSTORE_FILE")
-            if (!ksFile.isNullOrBlank() && project.file(ksFile).exists()) {
+            if (!ksFile.isNullOrBlank()) {
+                if (!project.file(ksFile).exists()) {
+                    throw GradleException("Release keystore not found: $ksFile")
+                }
                 signingConfig = signingConfigs.getByName("release")
             }
             isMinifyEnabled = false
