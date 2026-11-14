@@ -5,6 +5,11 @@
 # project has only gradle/wrapper/gradle-wrapper.properties), so the build
 # uses Gradle 8.9 installed by gradle/actions/setup-gradle instead of
 # ./gradlew. Android Studio generates the wrapper files on import.
+# Note: do NOT use android-actions/setup-android here. Its v3 setup runs
+# `sdkmanager tools`, and the `tools` package no longer exists in the SDK
+# repository (run 43569996140 failed on exactly that). The ubuntu runner
+# already ships an Android SDK, so install the two needed packages with
+# sdkmanager directly.
 # How to use: push to main (or run manually from the Actions tab) and
 # download the "webshelf-debug-apk" artifact (app-debug.apk) when it goes green.
 name: Build WebShelf APK
@@ -26,13 +31,10 @@ jobs:
           java-version: "17"
           distribution: "temurin"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Android 35 platform and build-tools
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v3
