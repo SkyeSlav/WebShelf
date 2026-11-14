@@ -102,15 +102,18 @@ jobs:
           ls -la app/build/outputs/apk/release/
           test -f app/build/outputs/apk/release/app-release.apk
 
+      - name: Rename release APK
+        run: cp app/build/outputs/apk/release/app-release.apk "app/build/outputs/apk/release/WebShelf-${{ github.ref_name }}.apk"
+
       - name: Create GitHub Release
         run: |
           gh release create "${{ github.ref_name }}" \
-            app/build/outputs/apk/release/app-release.apk \
+            "app/build/outputs/apk/release/WebShelf-${{ github.ref_name }}.apk" \
             --title "WebShelf ${{ github.ref_name }}" \
             --notes "WebShelf 1.0.0, the first release.
 
             A local-first library for web apps and offline HTML projects. Includes the WebShelf logo, a splash screen, and a Settings menu with an About page.
 
-            Install: download app-release.apk and install it on your device. This release is signed with the WebShelf release key, so future releases will update over it directly."
+            Install: download WebShelf-v1.0.0.apk and install it on your device. This release is signed with the WebShelf release key, so future releases will update over it directly."
         env:
           GH_TOKEN: ${{ github.token }}

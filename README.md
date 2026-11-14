@@ -16,6 +16,14 @@
 
 WebShelf is an open-source, local-first Android library for online web apps and offline HTML projects. Import a website by URL, or a standalone HTML file, a ZIP archive, or a whole project folder, and launch everything from one shelf. Local projects run through AndroidX WebKit's `WebViewAssetLoader` on their own secure HTTPS origin, so relative assets and browser APIs that need a secure context just work.
 
+## About
+
+WebShelf is a shelf for the web apps and HTML projects you actually use. Instead of scattering bookmarks across browsers, or losing track of standalone HTML files and zipped projects on your device, WebShelf keeps them in one library: give it a URL, an HTML file, a ZIP archive, or a whole project folder, and it will launch it from one place.
+
+Local projects run in their own secure WebView origin, so relative assets and browser APIs that need a secure context work the way they would on a real site. Everything is stored on the device. There is no account, no sync, and no tracking.
+
+WebShelf is open source under the MIT license. The app has an About page too: open Settings from the top bar, then About WebShelf, for the version, the source link, and the license.
+
 ## Features
 
 - Import a standalone `.html` / `.htm` file.
@@ -31,9 +39,9 @@ WebShelf is an open-source, local-first Android library for online web apps and 
 
 ## Get the app
 
-The latest stable release is on the [Releases page](https://github.com/SkyeSlav/WebShelf/releases): download `app-release.apk` and install it. Every release is signed with the same WebShelf release key, so future releases update over it directly.
+The latest stable release is on the [Releases page](https://github.com/SkyeSlav/WebShelf/releases): download `WebShelf-v1.0.0.apk` and install it. Every release is signed with the same WebShelf release key, so future releases update over it directly.
 
-There is no Google Play listing yet. If you want the freshest build instead of the latest release, grab the debug APK from GitHub Actions:
+If you want the freshest build instead of the latest release, grab the debug APK from GitHub Actions:
 
 1. Open the [Actions tab](https://github.com/SkyeSlav/WebShelf/actions).
 2. Pick the latest successful **Build WebShelf APK** run.
@@ -80,7 +88,6 @@ The project uses Android Gradle Plugin 8.7.3, Kotlin 2.0.21, Jetpack Compose, Ro
 - Export/import a complete WebShelf backup.
 - Better handling of nested project roots and multiple HTML entry points.
 - Import progress, storage usage and duplicate detection.
-- A Google Play listing.
 - Automated tests.
 
 ## License
